@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Pinball | DHS Coding Club</title>
+</head>
+
+<body>
+    <canvas id="myCanvas" width="1000px" height="700px"></canvas>
+    <script>
+        //set up the canvas
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+
+        const canvasWidth = 1000; //width of canvas
+        const canvasHeight = 700; //height of canvas
+        const PlayerWidth = 50; //width of player
+        const PlayerHeight = 100; //h  eight of player
+        const maxVelocity = 5; //maximum velocity of player
+
+        /*Player info*/
+        var playerX = 0; //x position of player (center)
+        var playerY = 0; //y position of player (center)
+        var velocityX = 0; //x velocity of player
+        var velocityY = 0; //y velocity of player
+
+        /*level information and elements*/
+        var level = 1; //start on level 1
+        var platforms = []; //an array that contains Platform objects for all of the Platforms in the level
+        var movingPlatforms = []; //an array that contains MovingPlatform objects for all of the moving platforms in the level
+        var lava = []; //an array that contains Lava objects for all of the Lava in the level
+        var movingBlade = []; //an array that contains Blade objects for all of the Blades in the level
+
+        function startLevel() {
+            if (level == 1) {
+                platforms = [
+                    new Platform([30, 30], 50, 10)
+                ];
+            }
+        }
+        /*Class for Platforms*/
+        class Platform {
+            constructor(position, width, height) {
+                this.position = position;
+                this.width = width;
+                this.height = height;
+            }
+            draw() {
+                //Draw the platform relative to the player
+                ctx.fillStyle = "Black";
+                ctx.fillRect(this.position[0] - playerX, this.position[1] - playerY, this.width, this.height);
+            }
+        }
+        class MovingPlatform extends Platform {
+            constructor(position1, position2, width, height, speed) {
+                this.position1 = position1; //This is the first position the Moving platform will start at
+                this.position2 = position2; //This is the second position the Moving platoform will end at
+                this.width = width;
+                this.height = height;
+                this.speed = speed;
+                this.goal = position2; //set the goal to position2 for now
+
+                this.position = position1; //Set the current position equal to the first position
+            }
+            move() {
+                let xDistance = Math.abs(this.position1[0] - this.position2[0]); //get the distance between the positions X
+                let yDistance = Math.abs(this.position1[1] - this.position2[1]); //get the distance between the positions Y
+                let y_to_x_ratio = yDistance / xDistance; //The ratio / proportion between y and x
+                //Move the X position towards the goal
+                if (this.position[0] > this.goal[0] + this.speed) {
+                    this.position[0] -= this.speed;
+                } else if (this.position[0] < this.goal[0] - this.speed) {
+                    this.position[0] += this.speed;
+                } else {
+                    this.position[0] = this.goal[0];
+                }
+
+                //Move the Y position towards the goal, proportionally accounting for the x and y distances
+                if (this.position[1] > this.goal[1] + this.speed) {
+                    this.position[1] -= this.speed * y_to_x_ratio;
+                } else if (this.position[1] < this.goal[1] - this.speed) {
+                    this.position[1] += this.speed * y_to_x_ratio;
+                } else {
+                    this.position[1] = this.goal[1];
+                }
+            }
+        }
+
+        //Clear the board
+        function Clear() {
+            ctx.fillStyle = "Grey";
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+        function drawPlayer() {
+            //Draw the player in the center of the screen
+            ctx.fillStyle = "Black";
+            let x = (canvasWidth / 2) - (PlayerWidth / 2);
+            let y = (canvasHeight / 2) - (PlayerHeight / 2);
+            ctx.fillRect(x, y, PlayerWidth, PlayerHeight);
+        }
+        function movePlayer() {
+            playerX += velocityX;
+            playerY += velocityY;
+        }
+        //This is the code for all of the buttons we will be using
+        const IterationAmount = 3
+        var keyIterationsLeft = IterationAmount; //the amount of iterations before the absolute value velocity is decreasted
+        document.addEventListener('keydown', function (event) {
+            keyIterationsLeft = IterationAmount; //a key was pressed
+            if (event.keyCode == 37) {
+                //Left key
+                if(velocityY > -5)
+                velocityX--;
+            } else if (event.keyCode == 39) {
+                //right key
+                velocityX++;
+            } else if (event.keyCode == 38) {
+                //up key
+                velocityY--;
+            } else if (event.keyCode == 40) {
+                //down key
+                velocityY++;
+            }
+        });
+        //Decrease the player's speed
+        function calmVelocities() {
+            if (keyIterationsLeft < 1) {
+                if (velocityX > 0) {
+                    velocityX -= 1;
+                } else if (velocityX < 0) {
+                    velocityX += 1;
+                }
+                if (velocityY > 0) {
+                    velocityY -= 1;
+                } else if (velocityY < 0) {
+                    velocityY += 1;
+                }
+            } else {
+                keyIterationsLeft -= 1;
+            }
+        }
+        function drawPlatforms() {
+            for (let i = 0; i < platforms.length; i++) {
+                platforms[i].draw(); //draw the platform
+            }
+        }
+        function drawEveryting() {
+            Clear(); //clear the canvas
+            drawPlayer(); //draw the player
+            drawPlatforms(); //draw the platforms
+        }
+        startLevel(); //Start the level (level 1 to begin with)
+        //This is the code for the game loop
+        var gameLoopVar = setInterval(gameLoop, 100);
+        function gameLoop() {
+            movePlayer(); //move the player
+            drawEveryting(); //draw the game
+            calmVelocities();
+        }
+    </script>
+</body>
